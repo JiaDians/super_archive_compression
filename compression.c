@@ -51,7 +51,7 @@ void get_most_common_byte_info(const unsigned char *window, unsigned char *most_
     {
         if (window[i] == *most_common_byte)
         {
-            *position |= (0x01 << WINDOW_SIZE - i - 1);
+            *position |= (0x01 << (WINDOW_SIZE - i - 1));
         }
     }
 }
@@ -69,7 +69,7 @@ unsigned long long get_file_total_byte(const char *file_path)
     fseek(file, 0, SEEK_END);
     unsigned long long file_size = ftell(file);
     fclose(file);
-    if (file_size == -1)
+    if (file_size == (unsigned long long)-1)
     {
         perror("[ERROR] failed to get file size");
         exit(1);
@@ -126,12 +126,11 @@ void compression(char *file_path)
 {
     unsigned long long total_byte = 0;
     int ch = 0;
-    int length = 8;
     unsigned char window[8] = {0x00};
     bool is_direct = false;
     unsigned char most_common_byte = 0x0;
     unsigned char position = 0x0;
-    int max_count = 0;
+    unsigned int max_count = 0;
     int index = 0;
     int remaining_byte = 0;
 
@@ -154,10 +153,12 @@ void compression(char *file_path)
     // 寫入檔名資訊
     char *file_name = extract_file_name(file_path);
     unsigned char file_name_length = strlen(file_name);
+    printf("%02X\n", file_name_length);
     fwrite(&file_name_length, sizeof(unsigned char), 1, output_file);
     while (*file_name)
     {
         unsigned char ch = (unsigned char)*file_name;
+        printf("%02X\n", ch);
         fwrite(&ch, sizeof(unsigned char), 1, output_file);
         file_name++;
     }
@@ -173,7 +174,7 @@ void compression(char *file_path)
     is_direct = false;
     while ((ch = fgetc(input_file)) != EOF)
     {
-        // printf("%02X ", ch);
+        printf("%02X\n", ch);
         // 將 ch 依序存入 window 內
         window[index % 8] = (unsigned char)ch;
         if (is_direct == false)
@@ -227,9 +228,9 @@ void decompression(char *file_path)
     int stage = 1;
     int ch = 0;
     unsigned long long total_byte = 0;
-    int first_byte = 0;
+    long long unsigned int first_byte = 0;
     int last_byte = 0;
-    int index = 0;
+    long long unsigned int index = 0;
     struct Node *headNode = (struct Node *)malloc(sizeof(struct Node));
     struct Node *currentNode = headNode;
     headNode->next = NULL;
@@ -256,7 +257,7 @@ void decompression(char *file_path)
     fseek(temp_file, 0, SEEK_SET);
     first_byte = fgetc(temp_file);
 
-    for (int i = 0; i < first_byte; i++)
+    for (long long unsigned int i = 0; i < first_byte; i++)
     {
         fseek(temp_file, i + 1, SEEK_SET);
         int file_name_ch = fgetc(temp_file);
@@ -284,9 +285,10 @@ void decompression(char *file_path)
 
     index = 0;
     stage = 0;
-    // printf("[CODE] ");
+    printf("[CODE]\n");
     while ((ch = fgetc(input_file)) != EOF)
     {
+        printf("%02X\n", ch);
         // 移動到檔案內容第一個 byte
         if (stage == 0)
         {
@@ -302,7 +304,6 @@ void decompression(char *file_path)
             }
         }
 
-        // printf("%02X ", ch);
         if (index < total_byte - (first_byte + 1) - (last_byte + 1))
         {
             if (stage == 1)
@@ -379,6 +380,9 @@ void decompression(char *file_path)
 
 int main(int argc, char *argv[])
 {
+    if (argc < 2)
+        exit(1);
+
     printf("[FILE PATH] %s\n", argv[1]);
     if (is_sac_file(argv[1]))
     {
