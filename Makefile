@@ -16,11 +16,11 @@ default: test
 test: test1 test2
 
 test1: $(TARGET)
-	./$(TARGET) ./data/TEST.txt
+	./$(TARGET) $(PWD)/data/TEST.txt
 
 test2: $(TARGET)
-	./$(TARGET) ./archive.sac
-	
+	./$(TARGET) $(PWD)/archive.sac
+
 clean:
 	rm -f $(TARGET)
 
